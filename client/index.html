@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" ng-app="MyApp">
+<head>
+    <title>Kalimera</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <style>
+        h1 {
+            color: pink;
+        }
+    </style>
+    <script src="vendor/jquery.min.js"></script>
+    <script src="vendor/angular.min.js"></script>
+    <script>
+        angular.module("MyApp", []);
+
+        function MainCtrl($scope, $http) {
+
+            function checker(fileId) {
+                return function () {
+                    var self = arguments.callee;
+                    $http.get("/fs/" + fileId)
+                    .success(function (state) {
+                        if (!state || state.state == 'error') {
+                            $scope.error = true;
+                            $scope.msg = "Error";
+                        }
+                        if (state.state == 'started') {
+                            //file not downloaded yet, retry in 1s
+                            $scope.wait++;
+                            setTimeout(self, 1000);
+                        }
+                        else if (state.state == 'finished') {
+                            $scope.dldlink = state.lnk;
+                            $scope.msg = "Download finished";
+                            if (state.lnk.indexOf('mp3') < 0)
+                                window.location = state.lnk;
+                        }
+                    }).error(function (data) {
+                        $scope.msg = "Api error";
+                    });
+                }
+            }
+
+            $scope.clear = function () {
+                $http.get("/clear").success(function (data) {
+                    if (data == "ok")
+                        $scope.msg = "/downloads cleared";
+                    else
+                        $scope.msg = data;
+                });
+            };
+
+            $scope.dld = function () {
+                $scope.dldlink = "";
+                $scope.wait = 0;
+                var id = window.btoa($scope.lnk);
+                var downloadUrl = "/src/" + id;
+
+                $http.get(downloadUrl)
+                .success(function (data) {
+                    $scope.msg = "Download started";
+                    setTimeout(checker(id), 1000);
+                })
+                .error(function (data) {
+                    $scope.msg = "Download has not started, api error";
+                });
+            }
+        }
+    </script>
+</head>
+<body ng-controller="MainCtrl">
+<div class="container" style="padding-top: 50px; padding-left: 50px">
+    <a href="" ng-click="clear()" style="float: right">Clear</a>
+
+    <h1>καλημερα</h1>
+    <span><input type='text' ng-model="lnk" style="width: 1000px">
+    <button class="btn btn-default" style="margin-bottom: 10px" ng-click="dld()">Download</button></span>
+    <br/>
+    <span ng-show="!dldlink"> </span><span ng-show="wait && !dldlink"><em>Downloading, waiting for {{wait}}
+    seconds...</em></span>
+    <a ng-show="dldlink" ng-href="{{dldlink}}">Download</a>
+    <br/>
+    <span>Message: {{msg}}</span>
+</div>
+</div>
+</body>
+</html>
