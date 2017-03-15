@@ -8,11 +8,9 @@ var gzip = (require('zlib')).createGzip();
 var downloads = {};
 
 exports.clear = function (req, res) {
-
     function removeDirForce(dirPath, ext, cb) {
         fs.readdir(dirPath, function (err, files) {
             if (err) {
-                //console.log(JSON.stringify(err));
                 cb(JSON.stringify(err));
             } else {
                 if (files.length > 0) {
@@ -20,18 +18,15 @@ exports.clear = function (req, res) {
                         var filePath = path.resolve(dirPath, file);
                         fs.stat(filePath, function (err, stats) {
                             if (err) {
-                                //console.log(JSON.stringify(err));
                                 cb(JSON.stringify(err));
                             } else {
                                 if (stats.isFile() && (!ext || file.indexOf(ext) >= 0)) {
                                     fs.unlink(filePath, function (err) {
                                         if (err) {
-                                            //console.log(JSON.stringify(err));
                                             cb(JSON.stringify(err));
                                         }
                                     });
                                 }
-
                                 if (stats.isDirectory()) {
                                     removeDirForce(filePath + '/', ext, cb);
                                 }
@@ -68,7 +63,7 @@ function getDownloadObject(fn) {
     };
 }
 
-exports.start = function (req, res) {
+exports.src = function (req, res) {
     var obj = downloads[req.params.fn] = getDownloadObject(req.params.fn);
 
     obj.stream.on('finish', function () {
@@ -103,7 +98,7 @@ exports.ls = function (req, res) {
     res.send(fs.readDirSync('/client/downloads'));
 };
 
-exports.sync = function (req, res) {
+exports.href = function (req, res) {
     var obj = downloads[req.params.fn] = getDownloadObject(req.params.fn);
 
     obj.stream.on('finish', function () {
@@ -123,4 +118,8 @@ exports.sync = function (req, res) {
         request(obj.link).pipe(gzip).pipe(obj.stream);
     else
         request(obj.link).pipe(obj.stream);
+};
+
+exports.fp = function(req, res) {
+
 };
